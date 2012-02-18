@@ -1,0 +1,22 @@
+/*
+ * To change this template, choose Tools | Templates
+ * and open the template in the editor.
+ */
+package alarmclock;
+
+import java.io.IOException;
+
+/**
+ *
+ * @author Gordon
+ */
+public class RealProcessStarter implements ProcessStarter {
+
+    @Override
+    public void runFile(String path) 
+            throws IOException
+    {
+        ProcessBuilder pb = new ProcessBuilder("cmd", "/c \"start " + path + "\"");
+        pb.start();
+    }
+}
