@@ -4,8 +4,10 @@
  * written consent of Simply Trackable LLC.
  * 
  */
-package alarmclock;
+package alarmclock.ServiceImplementations;
 
+import alarmclock.services.PropertiesLoader;
+import alarmclock.services.PropertiesLoader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;

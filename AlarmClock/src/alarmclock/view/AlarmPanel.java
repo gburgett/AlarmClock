@@ -8,24 +8,40 @@
  *
  * Created on Feb 9, 2012, 12:20:57 AM
  */
-package alarmclock;
+package alarmclock.view;
 
+import alarmclock.models.SetAlarm;
+import java.util.EventListener;
+import java.util.List;
 import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
 
 /**
- *
+ * This class is a View panel which displays a SetAlarm object.  It does not
+ * directly perform any data manipulations, but is rather simply a display.  Separating
+ * View code from Controller and Service code like this is an industry best
+ * practice.
  * @author Gordon
  */
 public class AlarmPanel extends javax.swing.JPanel {
 
-    private SetAlarm alarm;
+    /**
+     * This is the Alarm property.  It is a property because it has a
+     * Get and a Set method.  Properties are the preferred way to expose
+     * fields to outside classes.  If necessary, additional code can be placed
+     * inside the Get and Set methods in order to perform validation, tracking,
+     * or other tasks when this property is changed.
+     */
+    private SetAlarm alarm;    
     public SetAlarm getAlarm(){
         return alarm;
     }
     public void setAlarm(SetAlarm alarm){
         this.alarm = alarm;
         
+        //Here is an advantage to the Property paradigm.  Whenever any outside
+        //class changes the Alarm property we can update the display to match
+        //the new values.
         this.Update();
     }
     
@@ -82,10 +98,8 @@ public class AlarmPanel extends javax.swing.JPanel {
     }// </editor-fold>//GEN-END:initComponents
 
 private void cancelButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_cancelButtonActionPerformed
-    if(this.alarm != null){
-        this.alarm.cancel();
-    }
-        
+    //This fires the AlarmCancelled event on all attached AlarmCancelListeners.
+    this.fireAlarmCancelled();
 }//GEN-LAST:event_cancelButtonActionPerformed
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
@@ -94,9 +108,58 @@ private void cancelButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-
     private javax.swing.JLabel setTime;
     // End of variables declaration//GEN-END:variables
 
+    /** 
+     * This formatter displays the time of the alarm in a specific format.  It is
+     * static because we only need one for all instances of the Alarm Panel.
+     */
     private static DateTimeFormatter formatter = DateTimeFormat.forPattern("h:mm a d MMM, yyyy");
     public void Update(){
         this.exePath.setText(alarm.getPath());
         this.setTime.setText(alarm.getTime().toString(formatter));
+    }
+    
+    /*
+     * Below is an instance of the Event paradigm.  In java an Event is when you
+     * provide methods to add and remove EventListeners.  EventListeners are
+     * (usually anonymous) classes which implement a certain interface that 
+     * extends from EventListener.  These classes receive Events, which are
+     * methods on the interface.
+     */
+    /**
+     * This interface defines an EventListener which receives the event
+     * alarmCancelled.
+     */
+    public interface CancelAlarmListener extends EventListener
+    {
+        /**
+         * This event is fired whenever the user wishes to cancel an alarm using
+         * the Cancel button on the AlarmPanel.
+         * @param alarm The alarm to be cancelled
+         */
+        public void alarmCancelled(SetAlarm alarm);
+    }
+    
+    private List<CancelAlarmListener> CancelAlarmListeners = new java.util.ArrayList();
+    public void addCancelAlarmListener(CancelAlarmListener l){
+        this.CancelAlarmListeners.add(l);
+    }
+    
+    public void removeCancelAlarmListener(CancelAlarmListener l){
+        this.CancelAlarmListeners.remove(l);
+    }
+    
+    /**
+     * This is a private utility method which fires the alarmCancelled event on
+     * all attached CancelAlarmListeners.  It is called from the EventHandler
+     * for clicking the Cancel button.
+     */
+    private void fireAlarmCancelled(){
+        //You should always do this in your Fire methods.  This ensures that 
+        //if the event handler removes itself as a listener you will not get an
+        //exception when you move on to the next listener.
+        CancelAlarmListener[] arr = this.CancelAlarmListeners.toArray(new CancelAlarmListener[1]);
+        for(CancelAlarmListener l : arr){
+            l.alarmCancelled(alarm);
+        }
     }
 }

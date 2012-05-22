@@ -1,41 +1,49 @@
 /*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
-
-/*
  * MainFrame.java
  *
  * Created on Feb 9, 2012, 12:07:46 AM
  */
-package alarmclock;
+package alarmclock.view;
 
-import java.awt.Component;
+import alarmclock.models.FavoriteAlarm;
+import alarmclock.services.AlarmStarter;
+import alarmclock.services.ProcessStarter;
+import alarmclock.services.PropertiesLoader;
+import alarmclock.models.SetAlarm;
+import alarmclock.services.FavoriteAlarmService;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
 import java.io.IOException;
 import java.util.Comparator;
-import java.util.EventObject;
-import java.util.Properties;
 import java.util.SortedSet;
-import java.util.Timer;
-import java.util.TimerTask;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.SwingWorker;
 import org.joda.time.DateTime;
+import org.joda.time.LocalTime;
 
 /**
- *
+ * The MainFrame displays the data and responds to events.  Because this is
+ * written in the Swing framework, it must also be the Controller, that is,
+ * the part that responds to user input and changes the View.  More modern
+ * UI frameworks separate out the Controller and the View aspects.
+ * 
+ * This class Does Something.
  * @author Gordon
  */
 public class MainFrame extends javax.swing.JFrame {
 
-    private Timer timer = new Timer();
-    
+    //<editor-fold desc="fields">    
+    /**
+     * This is the sorted collection we are using to hold the current alarm panels.
+     * We enforce the ordering by providing it with a Comparator.  This Comparator
+     * specifies that two AlarmPanels should be compared by the Time of their Alarms.
+     * When the SortedSet wants to sort itself it will call the compare method
+     * of this comparator.
+     */
     private SortedSet<AlarmPanel> alarms = new java.util.TreeSet<AlarmPanel>(
             new Comparator<AlarmPanel>(){
                 @Override
@@ -44,30 +52,74 @@ public class MainFrame extends javax.swing.JFrame {
                 }
             });
     
+    /**
+     * This is simply a File choosing dialog that we can pop up when the user
+     * hits the choose button.
+     */
     private final JFileChooser fileChooser = new JFileChooser();
     
-    private ProcessStarter pStarter;
+    //this timer is just going to invoke Update to update the display clock, it's not
+    //going to do any important timing, all that will happen in TimerAlarmStarter
+    javax.swing.Timer updateTimer;
+    //</editor-fold>
     
-    private PropertiesLoader propsLoader;
+    //<editor-fold desc="services">
+    /*
+     * Here are all the injected services.  These services will be used by
+     * the MainFrame controller to perform actions, namely creating saving and 
+     * setting Alarms.  These service objects are all objects that Do Something.
+     * They are not created by the MainFrame itself, but rather are injected
+     * so that the main frame can be more easily tested.
+     */
     
-    /** Creates new form MainFrame */
+    private ProcessStarter processStarter;
+    public ProcessStarter getProcessStarter() {
+        return processStarter;
+    }
+
+    public void setProcessStarter(ProcessStarter pStarter) {
+        this.processStarter = pStarter;
+    }
+    
+    private AlarmStarter alarmStarter;
+    public void setAlarmStarter(AlarmStarter starter){
+        this.alarmStarter = starter;
+    }
+    
+    private FavoriteAlarmService favoritesService;
+    public void setFavoritesService(FavoriteAlarmService favoritesService){
+        this.favoritesService = favoritesService;
+    }
+    //</editor-fold>
+    
+    /** The MainFrame constructor
+     *  just sets up default stuff the frame needs in order to run
+     */
     public MainFrame() {
         initComponents();
         
+        //This just tells the frame to exit the program when the main frame closes.
         this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
     }
 
+    /**
+     * This method is called to initialize the class AFTER all the injected
+     * properties have been set.  We cannot call this in the constructor because
+     * we require the injected services, but we must do this before we do anything
+     * with the MainFrame.
+     */
     public void init(){
                 
         this.loadFavoriteAlarms();
         
-        
-        timer.schedule(new TimerTask(){
+        //Set up the timer to call update every 1 second
+        updateTimer = new javax.swing.Timer(1000, new ActionListener(){
             @Override
-            public void run() {
+            public void actionPerformed(ActionEvent e) {
                 MainFrame.this.update();
             }
-        }, 0, 1000);
+        });
+        updateTimer.start();
     }
     
     /** This method is called from within the constructor to
@@ -90,6 +142,7 @@ public class MainFrame extends javax.swing.JFrame {
         jScrollPane2 = new javax.swing.JScrollPane();
         favoritesPanel = new javax.swing.JPanel();
         saveButton = new javax.swing.JButton();
+        testButton = new javax.swing.JButton();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
 
@@ -143,6 +196,13 @@ public class MainFrame extends javax.swing.JFrame {
             }
         });
 
+        testButton.setText("Test");
+        testButton.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                testButtonActionPerformed(evt);
+            }
+        });
+
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
@@ -151,20 +211,22 @@ public class MainFrame extends javax.swing.JFrame {
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(layout.createSequentialGroup()
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(jScrollPane2, javax.swing.GroupLayout.DEFAULT_SIZE, 437, Short.MAX_VALUE)
-                            .addComponent(errorText, javax.swing.GroupLayout.DEFAULT_SIZE, 437, Short.MAX_VALUE)
+                            .addComponent(jScrollPane2, javax.swing.GroupLayout.DEFAULT_SIZE, 441, Short.MAX_VALUE)
+                            .addComponent(errorText, javax.swing.GroupLayout.DEFAULT_SIZE, 441, Short.MAX_VALUE)
                             .addGroup(layout.createSequentialGroup()
                                 .addComponent(saveButton, javax.swing.GroupLayout.PREFERRED_SIZE, 214, javax.swing.GroupLayout.PREFERRED_SIZE)
                                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                                .addComponent(setButton, javax.swing.GroupLayout.DEFAULT_SIZE, 213, Short.MAX_VALUE))
+                                .addComponent(setButton, javax.swing.GroupLayout.DEFAULT_SIZE, 217, Short.MAX_VALUE))
                             .addGroup(layout.createSequentialGroup()
                                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING, false)
                                     .addComponent(exePath, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                                     .addComponent(setSpinner, javax.swing.GroupLayout.DEFAULT_SIZE, 362, Short.MAX_VALUE))
                                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                .addComponent(chooseButton)))
+                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                                    .addComponent(chooseButton, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                    .addComponent(testButton, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))))
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 419, Short.MAX_VALUE))
+                        .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 415, Short.MAX_VALUE))
                     .addComponent(CurrentTime, javax.swing.GroupLayout.DEFAULT_SIZE, 862, Short.MAX_VALUE))
                 .addContainerGap())
         );
@@ -175,7 +237,9 @@ public class MainFrame extends javax.swing.JFrame {
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
                     .addGroup(layout.createSequentialGroup()
-                        .addComponent(setSpinner, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                            .addComponent(setSpinner, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addComponent(testButton))
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                             .addComponent(exePath, javax.swing.GroupLayout.PREFERRED_SIZE, 23, javax.swing.GroupLayout.PREFERRED_SIZE)
@@ -185,7 +249,7 @@ public class MainFrame extends javax.swing.JFrame {
                             .addComponent(saveButton)
                             .addComponent(setButton))
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(errorText, javax.swing.GroupLayout.DEFAULT_SIZE, 66, Short.MAX_VALUE)
+                        .addComponent(errorText, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                         .addComponent(jScrollPane2, javax.swing.GroupLayout.PREFERRED_SIZE, 156, javax.swing.GroupLayout.PREFERRED_SIZE))
                     .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 325, javax.swing.GroupLayout.PREFERRED_SIZE))
@@ -200,23 +264,57 @@ private void exePathActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST
 }//GEN-LAST:event_exePathActionPerformed
 
 private void chooseButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_chooseButtonActionPerformed
+    //This is the event handler for when the choose button is clicked
+    
     this.errorText.setText("");
     
+    //Open the file chooser dialog
     int returnVal = fileChooser.showOpenDialog(this);
     
     if (returnVal == JFileChooser.APPROVE_OPTION) {
+        //If the user approved a file, get it and set the text.
         File file = fileChooser.getSelectedFile();
-        this.exePath.setText(file.getPath());
-    } else {
-        this.errorText.setText("File choose cancelled: " + returnVal);
+        
+        //perform a little processing on the path
+        String[] path = file.getPath().split("\\\\");
+        StringBuilder sb = new StringBuilder();
+        int i;
+        for(i = 0; i < path.length-1; i++){
+            if(path[i].contains(" ")){
+                //gotta add quotes if part of the path contains spaces
+                sb.append("\"").append(path[i]).append("\"");
+            }
+            else
+                sb.append(path[i]);
+            
+            sb.append("\\");
+        }
+        if(path[i].contains(".")){
+            String[] splitOnDot = path[i].split("\\.");
+            if(splitOnDot[0].contains(" "))
+                //gotta add quotes if part of the path contains spaces
+                sb.append("\"").append(splitOnDot[0]).append("\"");
+            else
+                sb.append(splitOnDot[0]);
+            sb.append(".").append(splitOnDot[1]);
+        }
+        else
+            sb.append(path[i]);
+        
+        //set the text box to the new value
+        this.exePath.setText(sb.toString());
     }
 }//GEN-LAST:event_chooseButtonActionPerformed
 
 private void setButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_setButtonActionPerformed
     this.errorText.setText("");
+    
+    //Set a new alarm
     DateTime almTime = new DateTime(this.setSpinner.getValue());
     almTime = new DateTime().millisOfDay().setCopy(almTime.getMillisOfDay());
-    if(almTime.isBefore(System.currentTimeMillis()))
+    
+    if(almTime.isBeforeNow())
+        //they probably meant tomorrow
         almTime = almTime.dayOfMonth().addToCopy(1);
     
     this.setAlarm(almTime, this.exePath.getText());
@@ -224,37 +322,31 @@ private void setButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIR
 }//GEN-LAST:event_setButtonActionPerformed
 
 private void saveButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_saveButtonActionPerformed
+    //Save a new favorite alarm
     this.setFavorite(new DateTime(this.setSpinner.getValue()), this.exePath.getText());
-    
-    SwingWorker sw = new SwingWorker(){
-            @Override
-            protected Object doInBackground() throws Exception {
-                MainFrame.this.saveFavoriteAlarms();
-                return null;
-            }        
-    };
-    sw.execute();
-    
 }//GEN-LAST:event_saveButtonActionPerformed
 
-    /**
-     * @param args the command line arguments
-     */
-    public static void main(String args[]) {
-        final MainFrame mf = new MainFrame();
-        mf.pStarter = new RealProcessStarter();
-        mf.propsLoader = new LocalDiskPropertiesLoader();
+    private void testButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_testButtonActionPerformed
+        this.errorText.setText("");
+        
+        String path = this.exePath.getText();
+        
+        if(path == null || path.trim().isEmpty()){
+            this.errorText.setText("No path to test");
+            return;
+        }
+        
+        try {
+            //execute the given file immediately
+            this.processStarter.runFile(path);
+            
+        } catch (IOException ex) {
+            //there was an error, show it in the error window
+            this.errorText.setText(ex.toString());
+        }
+    }//GEN-LAST:event_testButtonActionPerformed
 
-        /* Create and display the form */
-        java.awt.EventQueue.invokeLater(new Runnable() {
-
-            @Override
-            public void run() {
-                mf.init();
-                mf.setVisible(true);
-            }
-        });
-    }
+    
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JLabel CurrentTime;
     private javax.swing.JButton chooseButton;
@@ -267,6 +359,7 @@ private void saveButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FI
     private javax.swing.JPanel setAlarmsPanel;
     private javax.swing.JButton setButton;
     private javax.swing.JSpinner setSpinner;
+    private javax.swing.JButton testButton;
     // End of variables declaration//GEN-END:variables
 
 
@@ -281,72 +374,81 @@ private void saveButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FI
         
     }
     
+    private void startFavoriteAlarm(FavoriteAlarm alarm){
+                   
+        SetAlarm setAlarm = this.favoritesService.CreateAlarm(alarm);
+        
+        this.setAlarm(setAlarm);
+    }
+    
     private SetAlarm setAlarm(DateTime time, String exePath){
-        final SetAlarm alm = new SetAlarm(
-                time,
-                exePath);
-        alm.setTimer(this.timer);
-        alm.setProcessStarter(this.pStarter);
+        final SetAlarm alm = this.alarmStarter.CreateAlarm(time, exePath);
 
+        setAlarm(alm);
+        
+        return alm;
+    }
+    
+    private SetAlarm setAlarm(final SetAlarm alm){
         final AlarmPanel panel = new AlarmPanel();
         panel.setAlarm(alm);
         try {
-            alm.Start();
+            this.alarmStarter.StartAlarm(alm, new Runnable(){
+                @Override
+                public void run() {
+                    MainFrame.this.onAlarmFinished(panel, alm);
+                }                
+            });
         } catch (Exception ex) {
             Logger.getLogger(MainFrame.class.getName()).log(Level.SEVERE, null, ex);
             this.errorText.setText("Can't start alarm: " + ex.toString());
             return null;
         }
         
+        panel.addCancelAlarmListener(new AlarmPanel.CancelAlarmListener(){
+            @Override
+            public void alarmCancelled(SetAlarm alarm) {
+                MainFrame.this.alarms.remove(panel);
+                MainFrame.this.updateAlarmsPanel();                            
+                panel.removeCancelAlarmListener(this);
+            }
+            
+        });
         
         this.alarms.add(panel);
-        alm.addAlarmListener(new SetAlarm.AlarmListener(){
-
-                @Override
-                public void cancelled(EventObject evt) {
-                    java.awt.EventQueue.invokeLater(new Runnable(){
-                        @Override
-                        public void run() {
-                            MainFrame.this.alarms.remove(panel);
-                            MainFrame.this.updateAlarmsPanel();                            
-                        }
-                    });     
-                    alm.removeAlarmListener(this);
-                }
-
-                @Override
-                public void finished(EventObject evt){
-                    java.awt.EventQueue.invokeLater(new Runnable(){
-                        @Override
-                        public void run() {
-                            MainFrame.this.alarms.remove(panel);
-                            MainFrame.this.updateAlarmsPanel();
-                        }
-                    });     
-                    alm.removeAlarmListener(this);
-                }
-
-                @Override
-                public void error(final Throwable ex) {
-                    java.awt.EventQueue.invokeLater(new Runnable(){
-                        @Override
-                        public void run() {
-                            MainFrame.this.alarms.remove(panel);
-                            MainFrame.this.updateAlarmsPanel();
-                            MainFrame.this.errorText.setText("Error activating alarm: " + ex.toString());
-                        }
-                    });     
-                    alm.removeAlarmListener(this);
-                }
-        });
-
-
+        
         panel.setVisible(true);
         this.updateAlarmsPanel();
         
         return alm;
     }
 
+    private void onAlarmFinished(final AlarmPanel panel, final SetAlarm alm){
+        try {
+            this.processStarter.runFile(alm.getPath());
+        } catch (final IOException ex) {
+            Logger.getLogger(MainFrame.class.getName()).log(Level.SEVERE, null, ex);
+                    
+            java.awt.EventQueue.invokeLater(new Runnable(){
+                @Override
+                public void run() {
+                    MainFrame.this.errorText.setText("Could not start " + 
+                            alm.getPath() + " because: " +
+                            ex.getMessage());
+                }        
+            });
+            return;
+        }
+        
+        java.awt.EventQueue.invokeLater(new Runnable(){
+            @Override
+            public void run() {
+                MainFrame.this.alarms.remove(panel);
+                MainFrame.this.updateAlarmsPanel();
+            }
+        });     
+    }
+    
     private FavoriteAlarmPanel setFavorite(DateTime time, String exePath){
         if(exePath.trim().isEmpty())
             return null;
@@ -354,7 +456,9 @@ private void saveButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FI
         if(time == null)
             return null;
         
-        final FavoriteAlarmPanel fave = new FavoriteAlarmPanel(time, exePath);
+        FavoriteAlarm alm = this.favoritesService.SaveFavorite(time.toLocalTime(), exePath);
+        
+        final FavoriteAlarmPanel fave = new FavoriteAlarmPanel(alm);
         this.hookupFavorite(fave);
         this.favoritesPanel.add(fave);
         fave.setVisible(true);
@@ -364,22 +468,21 @@ private void saveButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FI
     }
     
     private void hookupFavorite(final FavoriteAlarmPanel fave){
-        fave.setAlarmStarter(new AlarmStarter(){
-                @Override
-                public SetAlarm startAlarm(DateTime alarmDate, String exePath) {
-                    return MainFrame.this.setAlarm(alarmDate, exePath);
-                }
+        fave.addFavoriteAlarmListener(new FavoriteAlarmPanel.FavoriteAlarmListener() {
+
+            @Override
+            public void RemoveFavorite(FavoriteAlarm favorite) {
+                MainFrame.this.favoritesService.DeleteFavorite(favorite);
+                MainFrame.this.favoritesPanel.remove(fave);
+                MainFrame.this.favoritesPanel.repaint();
+                MainFrame.this.repaint();
+            }
+
+            @Override
+            public void StartFavorite(FavoriteAlarm favorite) {
+                MainFrame.this.startFavoriteAlarm(favorite);
+            }
         });
-        fave.addRemoveButtonListener(new ActionListener(){
-
-                @Override
-                public void actionPerformed(ActionEvent e) {
-                    MainFrame.this.favoritesPanel.remove(fave);
-                    MainFrame.this.favoritesPanel.repaint();
-                    MainFrame.this.saveFavoriteAlarms();
-                }
-            });
-
     }
     
     private void updateAlarmsPanel(){
@@ -391,33 +494,16 @@ private void saveButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FI
     }
     
     private void loadFavoriteAlarms(){
-        Properties favAlarms = this.propsLoader.loadProperties("FavoriteAlarms.properties");
+                
         
-        for(String s : favAlarms.stringPropertyNames()){
-            FavoriteAlarmPanel alm = FavoriteAlarmPanel.Deserialize(s);
-            this.hookupFavorite(alm);
-            this.favoritesPanel.add(alm);
-            alm.setVisible(true);            
+        for(FavoriteAlarm alm : this.favoritesService.getFavorites()){
+            FavoriteAlarmPanel almPanel = new FavoriteAlarmPanel(alm);
+            
+            this.hookupFavorite(almPanel);
+            this.favoritesPanel.add(almPanel);
+            almPanel.setVisible(true);            
         }
         
         this.favoritesPanel.repaint();
-    }
-                
-    private void saveFavoriteAlarms(){
-        Properties favAlarms = new Properties();
-        for(Component comp : this.favoritesPanel.getComponents()){
-            if(comp instanceof FavoriteAlarmPanel){
-                
-                String key = FavoriteAlarmPanel.Serialize((FavoriteAlarmPanel)comp);
-                favAlarms.setProperty(key, "");
-            }
-        }
-        try {
-            this.propsLoader.saveProperties("FavoriteAlarms.properties", favAlarms);
-        } catch (IOException ex) {
-            Logger.getLogger(MainFrame.class.getName()).log(Level.SEVERE, null, ex);
-            this.errorText.setText("Can't save favorites: " + ex.toString());
-        }
-        
     }
 }

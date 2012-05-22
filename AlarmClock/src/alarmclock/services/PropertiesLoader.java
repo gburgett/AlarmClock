@@ -3,7 +3,7 @@
  * This document may not be reproduced in whole or in part without the prior,
  * written consent of Simply Trackable LLC.
  */
-package alarmclock;
+package alarmclock.services;
 
 
 import java.io.IOException;
