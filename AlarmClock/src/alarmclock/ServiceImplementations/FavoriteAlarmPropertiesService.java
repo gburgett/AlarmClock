@@ -5,6 +5,7 @@ import alarmclock.models.SetAlarm;
 import alarmclock.services.FavoriteAlarmService;
 import alarmclock.services.PropertiesLoader;
 import alarmclock.view.FavoriteAlarmPanel;
+import java.io.IOException;
 import java.util.Comparator;
 import java.util.Properties;
 import java.util.Set;
@@ -17,14 +18,25 @@ import org.joda.time.format.DateTimeFormatter;
 
 /**
  * This service implementation implements the FavoriteAlarmService using an injected
- * Properties Loader service to save and load properties.  It will save our
- * favorite alarms as a set of Properties into the Properties Loader.
+ * Properties Loader service to store persistent data.  It will save our
+ * favorite alarms as a set of Properties into the Properties Loader, which will
+ * save them to persistent storage somehow.  This class doesn't care how.
  * 
  * This class Does Something.
  * @author Gordon
  */
 public class FavoriteAlarmPropertiesService implements FavoriteAlarmService{
 
+    /*
+     * The string "FavoriteAlarms.properties", which is the file name
+     * where we will be saving our favorite alarms, is what is known as a
+     * "Magic String".  Instead of putting the Magic String as a literal
+     * everywhere it is used, we declare it once here and use the constant
+     * variable "FileName" to refer to it.  This way we only have to modify
+     * the magic string in one place if we need to change it.
+     */
+    private static final String FileName = "FavoriteAlarms.properties";
+    
     /*
      * This is an example of Dependency Injection.  This service depends on
      * another service, that is a PropertiesLoader.  The Properties loader
@@ -33,7 +45,8 @@ public class FavoriteAlarmPropertiesService implements FavoriteAlarmService{
      * properties are saved, it only cares that it can load and save them.
      * 
      * Thus for separation of concerns, the PropertiesLoader service is injected
-     * by the program before this class is used.
+     * by the program before this class is used.  We only need a setter because
+     * it is injected once and used internally.
      */
     private PropertiesLoader loader;
     public void setPropertiesLoader(PropertiesLoader loader){
@@ -52,7 +65,7 @@ public class FavoriteAlarmPropertiesService implements FavoriteAlarmService{
      */
     @Override
     public Set<FavoriteAlarm> getFavorites(){
-        Properties props = this.loader.loadProperties("FavoriteAlarms.properties");
+        Properties props = this.loader.loadProperties(FileName);
         
         Set<FavoriteAlarm> favorites = new java.util.TreeSet<FavoriteAlarm>(
             new Comparator<FavoriteAlarm>(){
@@ -88,6 +101,12 @@ public class FavoriteAlarmPropertiesService implements FavoriteAlarmService{
             String key = this.Serialize(alm);
             props.setProperty(key, "");
         }
+        
+        try {
+            this.loader.saveProperties(FileName, props);
+        } catch (IOException ex) {
+            Logger.getLogger(FavoriteAlarmPropertiesService.class.getName()).log(Level.SEVERE, null, ex);
+        }
     }
     
     
@@ -100,6 +119,10 @@ public class FavoriteAlarmPropertiesService implements FavoriteAlarmService{
      */
     @Override
     public FavoriteAlarm SaveFavorite(LocalTime timeOfDay, String path) {
+        //round it to the nearest minute because that's the best resolution
+        //we can serialize to
+        timeOfDay = timeOfDay.minuteOfHour().roundFloorCopy();
+        
         FavoriteAlarm ret = new FavoriteAlarm(timeOfDay, path);
         
         Set<FavoriteAlarm> favorites = this.getFavorites();
@@ -168,14 +191,14 @@ public class FavoriteAlarmPropertiesService implements FavoriteAlarmService{
             String exePath = strs[1];
 
             LocalTime localTime = time.toLocalTime();
-            
+                        
             return new FavoriteAlarm(localTime, exePath);
             
         } catch (Exception ex) {
             //if there is an error, log it and return a null value indicating we could
             //not deserialize the string.
             Logger logger = Logger.getLogger(FavoriteAlarmPanel.class.getName());
-            logger.log(Level.WARNING, "Could not parse string " + str + ": " + ex.toString());
+            logger.log(Level.WARNING, "Could not parse string {0}: {1}", new Object[]{str, ex.toString()});
             
             return null;
         }

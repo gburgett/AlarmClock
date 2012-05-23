@@ -1,9 +1,4 @@
 /*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
-
-/*
  * FavoriteAlarmPanel.java
  *
  * Created on Feb 9, 2012, 11:15:03 PM
@@ -12,10 +7,16 @@ package alarmclock.view;
 
 import alarmclock.models.FavoriteAlarm;
 import java.util.EventListener;
+import java.util.EventObject;
 import java.util.List;
 
 /**
- *
+ * This class is a View panel which displays a FavoriteAlarm object.  It does not
+ * directly perform any data manipulations, but is rather simply a display.  Separating
+ * View code from Controller and Service code like this is an industry best
+ * practice.
+ * 
+ * This class Does Something.  It is a View for the FavoriteAlarm model.
  * @author Gordon
  */
 public class FavoriteAlarmPanel extends javax.swing.JPanel {
@@ -135,15 +136,35 @@ private void startButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-F
     public interface FavoriteAlarmListener extends EventListener{
         /**
          * This event is fired whenever the Remove button is clicked.
-         * @param favorite the FavoriteAlarm to remove
+         * @param favorite An event object containing the FavoriteAlarm to remove
          */
-        public void RemoveFavorite(FavoriteAlarm favorite);
+        public void RemoveFavorite(FavoriteAlarmEventObject favorite);
         
         /**
          * This event is fired whenever the Start button is clicked.
-         * @param favorite the FavoriteAlarm to start as an alarm.
+         * @param favorite An EventObject containing the FavoriteAlarm to start as an alarm.
          */
-        public void StartFavorite(FavoriteAlarm favorite);        
+        public void StartFavorite(FavoriteAlarmEventObject favorite);        
+    }
+    
+    /**
+     * This class is a specific EventObject which gets passed to EventListeners
+     * when the events are fired.  It is static so that it does not maintain
+     * an implicit reference to this FavoriteAlarmPanel.  Non-static inner
+     * classes always have an implicit reference to the outer class that
+     * created them.
+     */
+    public static class FavoriteAlarmEventObject extends EventObject{
+        private FavoriteAlarm favorite;
+        public FavoriteAlarm getFavorite(){
+            return this.favorite;
+        }
+        
+        public FavoriteAlarmEventObject(Object sender, FavoriteAlarm favorite)
+        {
+            super(sender);
+            this.favorite = favorite;
+        }
     }
     
     private List<FavoriteAlarmListener> favoriteAlarmListeners = new java.util.ArrayList();
@@ -161,14 +182,14 @@ private void startButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-F
         //exception when you move on to the next listener.
         FavoriteAlarmListener[] arr = this.favoriteAlarmListeners.toArray(new FavoriteAlarmListener[1]);
         for(FavoriteAlarmListener l : arr){
-            l.RemoveFavorite(this.favorite);
+            l.RemoveFavorite(new FavoriteAlarmEventObject(this, this.favorite));
         }
     }
     
     private void fireStartFavorite(){
         FavoriteAlarmListener[] arr = this.favoriteAlarmListeners.toArray(new FavoriteAlarmListener[1]);
         for(FavoriteAlarmListener l : this.favoriteAlarmListeners){
-            l.StartFavorite(favorite);
+            l.StartFavorite(new FavoriteAlarmEventObject(this, this.favorite));
         }
     }
 }

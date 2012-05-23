@@ -31,6 +31,12 @@ public interface AlarmStarter {
     public TimerTask StartAlarm(SetAlarm alarm, Runnable whenFinished)
             throws Exception;
     
+    /**
+     * Cancels an Alarm, preventing it from going off in the future.  After
+     * being canceled, the AlarmStarter will forget about the alarm.
+     * @param alarm The alarm to cancel
+     * @return True if the alarm was successfully canceled, false otherwise.
+     */
     public boolean CancelAlarm(SetAlarm alarm);
             
 }

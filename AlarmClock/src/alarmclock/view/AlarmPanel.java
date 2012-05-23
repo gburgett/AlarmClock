@@ -1,9 +1,4 @@
 /*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
-
-/*
  * AlarmPanel.java
  *
  * Created on Feb 9, 2012, 12:20:57 AM
@@ -12,6 +7,7 @@ package alarmclock.view;
 
 import alarmclock.models.SetAlarm;
 import java.util.EventListener;
+import java.util.EventObject;
 import java.util.List;
 import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
@@ -21,6 +17,8 @@ import org.joda.time.format.DateTimeFormatter;
  * directly perform any data manipulations, but is rather simply a display.  Separating
  * View code from Controller and Service code like this is an industry best
  * practice.
+ * 
+ * This class Does Something.  It is a View for the SetAlarm model.
  * @author Gordon
  */
 public class AlarmPanel extends javax.swing.JPanel {
@@ -136,7 +134,23 @@ private void cancelButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-
          * the Cancel button on the AlarmPanel.
          * @param alarm The alarm to be cancelled
          */
-        public void alarmCancelled(SetAlarm alarm);
+        public void alarmCancelled(CancelAlarmEventObject alarm);
+    }
+    
+    /**
+     * This class is the specific event object that gets passed to the event
+     * listeners when events are fired.  
+     */
+    public static class CancelAlarmEventObject extends EventObject{
+        private SetAlarm alarm;
+        public SetAlarm getAlarm(){
+            return this.alarm;
+        }
+        
+        public CancelAlarmEventObject(Object sender, SetAlarm alarm){
+            super(sender);
+            this.alarm = alarm;
+        }
     }
     
     private List<CancelAlarmListener> CancelAlarmListeners = new java.util.ArrayList();
@@ -159,7 +173,7 @@ private void cancelButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-
         //exception when you move on to the next listener.
         CancelAlarmListener[] arr = this.CancelAlarmListeners.toArray(new CancelAlarmListener[1]);
         for(CancelAlarmListener l : arr){
-            l.alarmCancelled(alarm);
+            l.alarmCancelled(new CancelAlarmEventObject(this, alarm));
         }
     }
 }

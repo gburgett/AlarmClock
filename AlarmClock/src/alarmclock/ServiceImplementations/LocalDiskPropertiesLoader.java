@@ -7,18 +7,17 @@
 package alarmclock.ServiceImplementations;
 
 import alarmclock.services.PropertiesLoader;
-import alarmclock.services.PropertiesLoader;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.io.*;
 import java.util.Properties;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
  * A properties loader which loads properties from the local disk.
+ * This PropertiesLoader has a file from which it loads and saves Properties
+ * objects.  This forms the basis for our persistent storage.
+ * 
+ * This class Does Something.
  * @author gordon
  */
 public class LocalDiskPropertiesLoader implements PropertiesLoader{
@@ -26,6 +25,8 @@ public class LocalDiskPropertiesLoader implements PropertiesLoader{
     /**
      * One lock for read/writing all files, so we don't have to worry
      * about reference counting or anything.
+     * 
+     * This field is used to synchronize access between threads.
      */
     private final ReadWriteLock lock = new ReentrantReadWriteLock();
 
@@ -36,7 +37,10 @@ public class LocalDiskPropertiesLoader implements PropertiesLoader{
         //load the default settings;
         OutputStream stream = null;
         try{
+            //Lock so other threads executing the same code don't try to do
+            //something else with this file while we're reading it.
             lock.writeLock().lock();
+            
                 //open the stream from the settings file
             File propsFile = new File(filename);
                 //if the file exists
@@ -63,6 +67,11 @@ public class LocalDiskPropertiesLoader implements PropertiesLoader{
             props.store(stream,"No Comments");
 
         }finally{
+            //ALWAYS ALWAYS ALWAYS unlock your locks and close your streams in
+            //a finally block.  A finally block will always be executed
+            //regardless of what happens inside the try block, even if there
+            //is a massive error.
+            
             lock.writeLock().unlock();
             if(stream != null)
                 stream.close();
@@ -73,34 +82,43 @@ public class LocalDiskPropertiesLoader implements PropertiesLoader{
     public Properties loadProperties(String filename)
     {
         try{
+            //Lock so other threads don't try to write to this file while we're
+            //reading from it.
             lock.readLock().lock();
             Properties defaultProps = new Properties();
 
-            {   //limit the scope of the code in here
+            {   //arbitrarily limit the scope of the variables inside here
                     //load the default settings;
                 InputStream stream = null;
                 try{
                     try{
-                            //get the stream from the classpath
+                            //This gets a stream from an internal resource file
+                            //which exists inside the JAR.
                         stream =
                             LocalDiskPropertiesLoader.class.getResourceAsStream(filename);
 
                             //load defaults if we can, but if not then fail silently
                         if(stream != null)
                             defaultProps.load(stream);
-                    }finally{
-                            if(stream != null)
-                                stream.close();
+                    }
+                    finally
+                    {
+                        //ALWAYS ALWAYS ALWAYS clean up your resources
+                        //by closing streams in a finally block
+                        if(stream != null)
+                            stream.close();
                     }
                 }catch(IOException ex){
                     //default props is corrupted or doesn't exist, clear it
                     defaultProps.clear();
                 }
-            }
+            }//end arbitrary variable scope
 
                 //create the appSetting using the default properties
             Properties ret = new Properties(defaultProps);
-            {
+            
+            { //arbitrarily limit the scope of the variables inside here
+                
                     //load the default settings;
                 InputStream stream = null;
                 try{
@@ -120,6 +138,8 @@ public class LocalDiskPropertiesLoader implements PropertiesLoader{
                             ret = defaultProps;
                         }
                     }finally{
+                        //ALWAYS ALWAYS ALWAYS clean up your resources
+                        //by closing streams in a finally block
                         if(stream != null)
                             stream.close();
                     }
@@ -129,11 +149,11 @@ public class LocalDiskPropertiesLoader implements PropertiesLoader{
                     ret.clear();
                 }
 
-
-            }
+            }//end arbitrary variable scope
 
             return ret;
         }finally{
+            //ALWAYS ALWAYS ALWAYS unlock your locks inside a finally block            
             lock.readLock().unlock();
         }
 
