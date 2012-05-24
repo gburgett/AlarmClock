@@ -103,6 +103,8 @@ public class FavoriteAlarmPropertiesService implements FavoriteAlarmService{
         }
         
         try {
+            //Take a look at the file after you save a couple favorites.  You can
+            //open it in notepad and see what it looks like.
             this.loader.saveProperties(FileName, props);
         } catch (IOException ex) {
             Logger.getLogger(FavoriteAlarmPropertiesService.class.getName()).log(Level.SEVERE, null, ex);
