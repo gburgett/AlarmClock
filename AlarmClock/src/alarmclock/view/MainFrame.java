@@ -379,6 +379,61 @@ private void saveButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FI
         
     }
     
+        /**
+     * This method is called when a new FavoriteAlarm gets set.
+     * @param time The TimeOfDay for the favorite alarm
+     * @param exePath The Path to use for the alarm
+     * @return A Panel that displays the new FavoriteAlarm, or null if it couldn't
+     * be saved.
+     */
+    private FavoriteAlarmPanel setFavorite(DateTime time, String exePath){
+        //perform some initial validation
+        if(exePath.trim().isEmpty())
+            return null;
+        
+        if(time == null)
+            return null;
+        
+        //Create the new FavoriteAlarm and save it using the favoritesService
+        FavoriteAlarm alm = this.favoritesService.SaveFavorite(time.toLocalTime(), exePath);
+        
+        //Create the new display panel and hook up its events
+        final FavoriteAlarmPanel fave = new FavoriteAlarmPanel(alm);
+        this.hookupFavorite(fave);
+        
+        //Add it to our FavoriteAlarms container and turn it on
+        this.favoritesPanel.add(fave);
+        fave.setVisible(true);
+        this.favoritesPanel.repaint();
+        
+        return fave;
+    }
+    
+    /**
+     * This method is called to add event listeners to a newly created FavoriteAlarmPanel.
+     * @param fave the FavoriteAlarmPanel to which the event listeners should be added.
+     */
+    private void hookupFavorite(final FavoriteAlarmPanel fave){
+        //we'll create and add the listener inline using an anonymous class
+        fave.addFavoriteAlarmListener(new FavoriteAlarmPanel.FavoriteAlarmListener() {
+
+            @Override
+            public void RemoveFavorite(FavoriteAlarmPanel.FavoriteAlarmEventObject favorite) {
+                //This event is fired when the Remove button is clicked.
+                MainFrame.this.favoritesService.DeleteFavorite(favorite.getFavorite());
+                MainFrame.this.favoritesPanel.remove(fave);
+                MainFrame.this.favoritesPanel.repaint();
+                MainFrame.this.repaint();
+            }
+
+            @Override
+            public void StartFavorite(FavoriteAlarmPanel.FavoriteAlarmEventObject favorite) {
+                MainFrame.this.startFavoriteAlarm(favorite.getFavorite());
+            }
+        });
+    }
+    
+    
     /**
      * Starts a FavoriteAlarm when a FavoriteAlarm panel fires the StartFavorite
      * event.
@@ -487,60 +542,7 @@ private void saveButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FI
         });     
     }
     
-    /**
-     * This method is called when a new FavoriteAlarm gets set.
-     * @param time The TimeOfDay for the favorite alarm
-     * @param exePath The Path to use for the alarm
-     * @return A Panel that displays the new FavoriteAlarm, or null if it couldn't
-     * be saved.
-     */
-    private FavoriteAlarmPanel setFavorite(DateTime time, String exePath){
-        //perform some initial validation
-        if(exePath.trim().isEmpty())
-            return null;
-        
-        if(time == null)
-            return null;
-        
-        //Create the new FavoriteAlarm and save it using the favoritesService
-        FavoriteAlarm alm = this.favoritesService.SaveFavorite(time.toLocalTime(), exePath);
-        
-        //Create the new display panel and hook up its events
-        final FavoriteAlarmPanel fave = new FavoriteAlarmPanel(alm);
-        this.hookupFavorite(fave);
-        
-        //Add it to our FavoriteAlarms container and turn it on
-        this.favoritesPanel.add(fave);
-        fave.setVisible(true);
-        this.favoritesPanel.repaint();
-        
-        return fave;
-    }
-    
-    /**
-     * This method is called to add event listeners to a newly created FavoriteAlarmPanel.
-     * @param fave the FavoriteAlarmPanel to which the event listeners should be added.
-     */
-    private void hookupFavorite(final FavoriteAlarmPanel fave){
-        //we'll create and add the listener inline using an anonymous class
-        fave.addFavoriteAlarmListener(new FavoriteAlarmPanel.FavoriteAlarmListener() {
-
-            @Override
-            public void RemoveFavorite(FavoriteAlarmPanel.FavoriteAlarmEventObject favorite) {
-                //This event is fired when the Remove button is clicked.
-                MainFrame.this.favoritesService.DeleteFavorite(favorite.getFavorite());
-                MainFrame.this.favoritesPanel.remove(fave);
-                MainFrame.this.favoritesPanel.repaint();
-                MainFrame.this.repaint();
-            }
-
-            @Override
-            public void StartFavorite(FavoriteAlarmPanel.FavoriteAlarmEventObject favorite) {
-                MainFrame.this.startFavoriteAlarm(favorite.getFavorite());
-            }
-        });
-    }
-    
+   
     /**
      * This is called when there's a change to the AlarmsPanel container.  It
      * removes and re-adds all the alarms in the order specified by the SortedSet

@@ -10,23 +10,31 @@ Let me define a couple terms here.  Throughout the comments you'll see me say "t
 
 OK so here it is, the Breakdown:
 
-alarmclock.view package
+package alarmclock.view
 	This package is all about displaying the data.  There's not a whole lot to display but it's kinda complicated cause it's Swing UI framework.  Basically Swing UI is lame, but it's built in to java so you use it sometimes cause you gotta.  Also, because it's Swing UI these classes are also Controllers.  You should google Model-View-Controller (MVC) because that's the way programs are done nowadays.  The old way of WinForms and Swing UI is dying out.
 	All these classes Display Something, the MainFrame also Does Something.
 	
-	
-	* MainFrame.java
-		** This is the central View and Controller of the program.  It initiates all the actions by responding to button presses and junk, and either displays or has containers to display the data.  It also has forms to input new data (namely, when you want the alarm to go off and what you want to execute when it does).
 		
-	* AlarmPanel.java
-	* FavoriteAlarmPanel.java
-		** These classes are very simple because they are simply Views.  There is no real controller code associated with them, they don't control anything.  Instead, the MainFrame listens to their events and controls things when their events are fired.
-		
-alarmclock.models
+package alarmclock.models
 	This package is all about representing data as structures.  All these classes Are Something.  They represent a Thing that we need to Display or Do Something with.  Because they Are Something (that is, they are Models), they don't have any code that really Does Anything.  All they have are Properties (that is, fields with getter and setter methods), and well-defined Equals and GetHashCode methods.  The Equals method is important because for classes that Are Something, we need to be able to tell when two instances of a class represent the Same Thing.  And if you ever override equals you always should override GetHashCode.
 	
-	* SetAlarm.java
-		** This class Is Something.  It is an Alarm.  It may not yet be set, but it is defined.  It has a time when it's supposed to go off (if it ever gets set) and it has a path to a file or website it needs to launch when it goes off.
+	
+package alarmclock.services
+	This package is all about defining the contracts for our services.  It contains only interfaces.  Its purpose is to say "these are the things that need to happen in the program.  Someone needs to be responsible for doing these things."  We will implement these interfaces with classes that will be responsible for doing these things.  The controller classes (alarmclock.view.MainFrame is our only controller class in this program) and other services will rely on these interfaces when they need these things to be done.
+	An example of something that needs to be done, for which there is a defined contract:
+		Saving a new FavoriteAlarm to disk.  The contract for this is defined in alarmclock.services.FavoriteAlarmService with the method SaveFavorite.
+		This is implemented in the class alarmclock.ServiceImplementations.FavoriteAlarmPropertiesService using a PropertiesLoader to perform the loading/saving to disk.
 		
-	* FavoriteAlarm.java
-		** This class Is Something.  It is a stored favorite alarm, that can be turned into an actual Alarm.  Notice it doesn't define on itself the code to turn it into an alarm.  That's because this class Is Something, so it doesn't Do Anything.  Doing things to FavoriteAlarms is the responsibility of the FavoriteAlarmService.
+package alarmclock.ServiceImplementations
+	This package is where all the actual code goes that Does Something and is not a Controller.  All the classes in here implement the interfaces in alarmclock.services.  They are actually responsible for doing the things that need to be done, as defined in the interfaces.
+	
+Tests!!!
+
+Two of the ServiceImplementations have tests.  Some of the ServiceImplementations are so simple that they don't need tests, also it would be hard to test them since they do things like directly interact with the command prompt.  It would be nice if we could also test the controller, but because in Swing the controller and view are tightly coupled we can't do that.  We'll have to handle that stuff with integration testing.
+
+We also have some test utilities, and some Stubs for a PropertiesLoader.  Stubs are a pretty simple concept.  Instead of using an actual properties loader that loads an actual file from disk, we use a fake one that just returns whatever we need it to return.  In the tests you'll see where we use it to return a programmatically-defined set of properties that the test expects to be there.
+
+Always have tests for as many service implementations as you can.  Better to have too many tests than too few.
+
+Thats it! have fun!
+	

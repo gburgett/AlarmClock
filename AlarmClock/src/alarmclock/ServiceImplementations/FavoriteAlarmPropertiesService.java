@@ -35,7 +35,7 @@ public class FavoriteAlarmPropertiesService implements FavoriteAlarmService{
      * variable "FileName" to refer to it.  This way we only have to modify
      * the magic string in one place if we need to change it.
      */
-    private static final String FileName = "FavoriteAlarms.properties";
+    static final String FileName = "FavoriteAlarms.properties";
     
     /*
      * This is an example of Dependency Injection.  This service depends on
@@ -43,6 +43,13 @@ public class FavoriteAlarmPropertiesService implements FavoriteAlarmService{
      * is the service that performs the loading and saving of properties to
      * wherever.  The FavoriteAlarmPropertiesService doesn't care where the
      * properties are saved, it only cares that it can load and save them.
+     * 
+     * This becomes very useful for Unit Tests, when we want to test the
+     * functionality of this class without having to write and load an actual
+     * file using an actual properties loader.  We can mock out the properties
+     * loader interface and give a fake properties loader to this class, then
+     * we can tightly control the test conditions.
+     * See an example of this in FavoriteAlarmPropertiesServiceTest.java
      * 
      * Thus for separation of concerns, the PropertiesLoader service is injected
      * by the program before this class is used.  We only need a setter because
@@ -134,6 +141,11 @@ public class FavoriteAlarmPropertiesService implements FavoriteAlarmService{
         return ret;
     }
 
+    /**
+     * Deletes a favorite alarm out of the persistent data store.
+     * @param favorite The FavoriteAlarm to delete
+     * @return true if the FavoriteAlarm was able to be deleted, false otherwise
+     */
     @Override
     public boolean DeleteFavorite(FavoriteAlarm favorite) {
         Set<FavoriteAlarm> favorites = this.getFavorites();
@@ -145,6 +157,12 @@ public class FavoriteAlarmPropertiesService implements FavoriteAlarmService{
         return wasRemoved;
     }
 
+    /**
+     * Converts a FavoriteAlarm into a SetAlarm, whose execution time is the
+     * same time of day as the favorite within the next 24 hours.
+     * @param favorite the FavoriteAlarm to convert
+     * @return the resulting converted SetAlarm
+     */
     @Override
     public SetAlarm CreateAlarm(FavoriteAlarm favorite) {
         

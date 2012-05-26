@@ -53,13 +53,13 @@ public class TimerAlarmStarter implements AlarmStarter {
     {
         //this section is validation on the given alarm
         if (runningTasks.containsKey(alarm)){
-            throw new Exception("Already scheduled once");
+            throw new UnsupportedOperationException("Already scheduled once");
         }
         
         //get the number of milliseconds in the future we want to set the alarm for.
         long millis = alarm.getTime().getMillis() - System.currentTimeMillis();
         if(millis < 0 || millis > SetAlarm.MAX_FUTURE_SCHEDULING_MILLIS)
-            throw new Exception("can't schedule for " + millis + "from now");
+            throw new UnsupportedOperationException("can't schedule for " + millis + "from now");
         
         //here we are creating the new TimerTask that will be executed by the timer.
         TimerTask ret = new TimerTask(){
