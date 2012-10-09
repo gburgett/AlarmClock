@@ -27,13 +27,13 @@ import org.joda.time.DateTime;
  * written in the Swing framework, it must also be the Controller, that is,
  * the part that responds to user input and changes the View.  More modern
  * UI frameworks separate out the Controller and the View aspects.
- * 
+ *
  * This class Does Something.  It is a View and also a Controller.
  * @author Gordon
  */
 public class MainFrame extends javax.swing.JFrame {
 
-    //<editor-fold desc="fields">    
+    //<editor-fold desc="fields">
     /**
      * This is the sorted collection we are using to hold the current alarm panels.
      * We enforce the ordering by providing it with a Comparator.  This Comparator
@@ -49,51 +49,51 @@ public class MainFrame extends javax.swing.JFrame {
                     return o1.getAlarm().getTime().compareTo(o2.getAlarm().getTime());
                 }
             });
-    
+
     /**
      * This is simply a File choosing dialog that we can pop up when the user
      * hits the choose button.
      */
     private final JFileChooser fileChooser = new JFileChooser();
-    
+
     //this timer is just going to invoke Update to update the display clock, it's not
     //going to do any important timing, all that will happen in TimerAlarmStarter
     javax.swing.Timer updateTimer;
     //</editor-fold>
-    
+
     //<editor-fold desc="services">
     /*
      * Here are all the injected services.  These services will be used by
-     * the MainFrame controller to perform actions, namely creating saving and 
+     * the MainFrame controller to perform actions, namely creating saving and
      * setting Alarms.  These service objects are all objects that Do Something.
      * They are not created by the MainFrame itself, but rather are injected
      * so that the main frame can be more easily tested.
-     * 
+     *
      * Injected Services only need a setter because they are only used internally.
      */
-    
+
     private ProcessStarter processStarter;
     public void setProcessStarter(ProcessStarter pStarter) {
         this.processStarter = pStarter;
     }
-    
+
     private AlarmStarter alarmStarter;
     public void setAlarmStarter(AlarmStarter starter){
         this.alarmStarter = starter;
     }
-    
+
     private FavoriteAlarmService favoritesService;
     public void setFavoritesService(FavoriteAlarmService favoritesService){
         this.favoritesService = favoritesService;
     }
     //</editor-fold>
-    
+
     /** The MainFrame constructor
      *  just sets up default stuff the frame needs in order to run
      */
     public MainFrame() {
         initComponents();
-        
+
         //This just tells the frame to exit the program when the main frame closes.
         this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
     }
@@ -105,9 +105,9 @@ public class MainFrame extends javax.swing.JFrame {
      * with the MainFrame.
      */
     public void init(){
-                
+
         this.loadFavoriteAlarms();
-        
+
         //Set up the timer to call update every 1 second
         updateTimer = new javax.swing.Timer(1000, new ActionListener(){
             @Override
@@ -115,9 +115,13 @@ public class MainFrame extends javax.swing.JFrame {
                 MainFrame.this.update();
             }
         });
+        //set the initial delay to be the number of remaining milliseconds in the
+        //current second
+        updateTimer.setInitialDelay(1000 - new DateTime().getMillisOfSecond());
+        
         updateTimer.start();
     }
-    
+
     /** This method is called from within the constructor to
      * initialize the form.
      * WARNING: Do NOT modify this code. The content of this method is
@@ -261,16 +265,16 @@ private void exePathActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST
 
 private void chooseButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_chooseButtonActionPerformed
     //This is the event handler for when the choose button is clicked
-    
+
     this.errorText.setText("");
-    
+
     //Open the file chooser dialog
     int returnVal = fileChooser.showOpenDialog(this);
-    
+
     if (returnVal == JFileChooser.APPROVE_OPTION) {
         //If the user approved a file, get it and set the text.
         File file = fileChooser.getSelectedFile();
-        
+
         //perform a little processing on the path to make sure parts with spaces are
         //enclosed in quotation marks
         String[] path = file.getPath().split("\\\\");
@@ -283,21 +287,28 @@ private void chooseButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-
             }
             else
                 sb.append(path[i]);
-            
+
             sb.append("\\");
         }
+        //the last bit of the path may contain a dot.  We have not yet processed
+        //the last bit (our for loop ended at length - 1)
         if(path[i].contains(".")){
-            String[] splitOnDot = path[i].split("\\.");
+            int lastIndex = path[i].lastIndexOf(".");
+
+            String[] splitOnDot = {
+                path[i].substring(0, lastIndex),
+                path[i].substring(lastIndex)
+            };
             if(splitOnDot[0].contains(" "))
                 //gotta add quotes if part of the path contains spaces
                 sb.append("\"").append(splitOnDot[0]).append("\"");
             else
                 sb.append(splitOnDot[0]);
-            sb.append(".").append(splitOnDot[1]);
+            sb.append(splitOnDot[1]);
         }
         else
             sb.append(path[i]);
-        
+
         //set the text box to the new value
         this.exePath.setText(sb.toString());
     }
@@ -305,17 +316,18 @@ private void chooseButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-
 
 private void setButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_setButtonActionPerformed
     this.errorText.setText("");
-    
+
     //Set a new alarm
     DateTime almTime = new DateTime(this.setSpinner.getValue());
+    //copy the millis of day of the alarm time onto a DateTime representing today
     almTime = new DateTime().millisOfDay().setCopy(almTime.getMillisOfDay());
-    
+
     if(almTime.isBeforeNow())
         //they probably meant tomorrow
         almTime = almTime.dayOfMonth().addToCopy(1);
-    
+
     this.setAlarm(almTime, this.exePath.getText());
-    
+
 }//GEN-LAST:event_setButtonActionPerformed
 
 private void saveButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_saveButtonActionPerformed
@@ -325,25 +337,25 @@ private void saveButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FI
 
     private void testButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_testButtonActionPerformed
         this.errorText.setText("");
-        
+
         String path = this.exePath.getText();
-        
+
         if(path == null || path.trim().isEmpty()){
             this.errorText.setText("No path to test");
             return;
         }
-        
+
         try {
             //execute the given file immediately
             this.processStarter.runFile(path);
-            
+
         } catch (IOException ex) {
             //there was an error, show it in the error window
             this.errorText.setText(ex.toString());
         }
     }//GEN-LAST:event_testButtonActionPerformed
 
-    
+
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JLabel CurrentTime;
     private javax.swing.JButton chooseButton;
@@ -373,12 +385,12 @@ private void saveButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FI
             @Override
             public void run() {
                 DateTime now = new DateTime(System.currentTimeMillis());
-                MainFrame.this.CurrentTime.setText(now.toString("MMM d, yyyy h:mm:ss a"));                 
+                MainFrame.this.CurrentTime.setText(now.toString("MMM d, yyyy h:mm:ss a"));
             }
-        });     
-        
+        });
+
     }
-    
+
         /**
      * This method is called when a new FavoriteAlarm gets set.
      * @param time The TimeOfDay for the favorite alarm
@@ -390,25 +402,25 @@ private void saveButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FI
         //perform some initial validation
         if(exePath.trim().isEmpty())
             return null;
-        
+
         if(time == null)
             return null;
-        
+
         //Create the new FavoriteAlarm and save it using the favoritesService
-        FavoriteAlarm alm = this.favoritesService.SaveFavorite(time.toLocalTime(), exePath);
-        
+        FavoriteAlarm alm = this.favoritesService.saveFavorite(time.toLocalTime(), exePath);
+
         //Create the new display panel and hook up its events
         final FavoriteAlarmPanel fave = new FavoriteAlarmPanel(alm);
         this.hookupFavorite(fave);
-        
+
         //Add it to our FavoriteAlarms container and turn it on
         this.favoritesPanel.add(fave);
         fave.setVisible(true);
         this.favoritesPanel.repaint();
-        
+
         return fave;
     }
-    
+
     /**
      * This method is called to add event listeners to a newly created FavoriteAlarmPanel.
      * @param fave the FavoriteAlarmPanel to which the event listeners should be added.
@@ -420,7 +432,7 @@ private void saveButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FI
             @Override
             public void RemoveFavorite(FavoriteAlarmPanel.FavoriteAlarmEventObject favorite) {
                 //This event is fired when the Remove button is clicked.
-                MainFrame.this.favoritesService.DeleteFavorite(favorite.getFavorite());
+                MainFrame.this.favoritesService.deleteFavorite(favorite.getFavorite());
                 MainFrame.this.favoritesPanel.remove(fave);
                 MainFrame.this.favoritesPanel.repaint();
                 MainFrame.this.repaint();
@@ -432,73 +444,73 @@ private void saveButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FI
             }
         });
     }
-    
-    
+
+
     /**
      * Starts a FavoriteAlarm when a FavoriteAlarm panel fires the StartFavorite
      * event.
      * @param alarm The FavoriteAlarm that should be started.
      */
     private void startFavoriteAlarm(FavoriteAlarm alarm){
-                   
+
         //call into the favorites service to create an Alarm from the FavoriteAlarm
-        SetAlarm setAlarm = this.favoritesService.CreateAlarm(alarm);
-        
+        SetAlarm setAlarm = this.favoritesService.createAlarm(alarm);
+
         this.setAlarm(setAlarm);
     }
-    
+
     private SetAlarm setAlarm(DateTime time, String exePath){
         //call into the alarm starter service to create an Alarm for the given time and path
-        final SetAlarm alm = this.alarmStarter.CreateAlarm(time, exePath);
+        final SetAlarm alm = this.alarmStarter.createAlarm(time, exePath);
 
         this.setAlarm(alm);
-        
+
         return alm;
     }
-    
+
     private SetAlarm setAlarm(final SetAlarm alm){
         //Create a new Panel view to display this alarm
         final AlarmPanel panel = new AlarmPanel();
         panel.setAlarm(alm);
-        
+
         try {
             //Try to start this alarm
-            this.alarmStarter.StartAlarm(alm, new Runnable(){
+            this.alarmStarter.startAlarm(alm, new Runnable(){
                 @Override
                 public void run() {
                     //When the alarm goes off, run this code
                     MainFrame.this.onAlarmFinished(panel, alm);
-                }                
+                }
             });
-            
+
         } catch (Exception ex) {
             //Log the error, and set the errorText display
             Logger.getLogger(MainFrame.class.getName()).log(Level.SEVERE, null, ex);
             this.errorText.setText("Can't start alarm: " + ex.toString());
             return null;
         }
-        
+
         //Make sure we're listening in case the user clicks the cancel button
         panel.addCancelAlarmListener(new AlarmPanel.CancelAlarmListener(){
             @Override
             public void alarmCancelled(AlarmPanel.CancelAlarmEventObject alarm) {
                 //remove the alarm from the display
                 MainFrame.this.alarms.remove((AlarmPanel)alarm.getSource());
-                MainFrame.this.updateAlarmsPanel();                            
+                MainFrame.this.updateAlarmsPanel();
                 panel.removeCancelAlarmListener(this);
-                
+
                 //cancel the running alarm task
-                MainFrame.this.alarmStarter.CancelAlarm(alarm.getAlarm());
-            }            
+                MainFrame.this.alarmStarter.cancelAlarm(alarm.getAlarm());
+            }
         });
-        
+
         //Add the Alarm display panel to our Alarms panel
         this.alarms.add(panel);
-        
+
         //turn on the new alarm panel
         panel.setVisible(true);
         this.updateAlarmsPanel();
-        
+
         return alm;
     }
 
@@ -515,21 +527,21 @@ private void saveButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FI
         } catch (final IOException ex) {
             //Uh oh!  Log it
             Logger.getLogger(MainFrame.class.getName()).log(Level.SEVERE, null, ex);
-                    
+
             //Can't guarantee this code is running on the same thread as the EventQueue
             //so we do this invokeLater thing again
             java.awt.EventQueue.invokeLater(new Runnable(){
                 @Override
                 public void run() {
                     //Set the errorText display to show the error
-                    MainFrame.this.errorText.setText("Could not start " + 
+                    MainFrame.this.errorText.setText("Could not start " +
                             alm.getPath() + " because: " +
                             ex.getMessage());
-                }        
+                }
             });
             return;
         }
-        
+
         //Can't guarantee this code is running on the same thread as the EventQueue
         //so we do this invokeLater thing again
         java.awt.EventQueue.invokeLater(new Runnable(){
@@ -539,10 +551,10 @@ private void saveButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FI
                 MainFrame.this.alarms.remove(panel);
                 MainFrame.this.updateAlarmsPanel();
             }
-        });     
+        });
     }
-    
-   
+
+
     /**
      * This is called when there's a change to the AlarmsPanel container.  It
      * removes and re-adds all the alarms in the order specified by the SortedSet
@@ -552,26 +564,26 @@ private void saveButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FI
     private void updateAlarmsPanel(){
         this.setAlarmsPanel.removeAll();
         for(AlarmPanel p : this.alarms){
-            this.setAlarmsPanel.add(p);            
+            this.setAlarmsPanel.add(p);
         }
         this.setAlarmsPanel.repaint();
     }
-    
+
     /**
      * This method is called on startup to load up the favorite alarms out of
      * the favorites service, and create display panels for all of them.
      */
     private void loadFavoriteAlarms(){
-                
-        
+
+
         for(FavoriteAlarm alm : this.favoritesService.getFavorites()){
             FavoriteAlarmPanel almPanel = new FavoriteAlarmPanel(alm);
-            
+
             this.hookupFavorite(almPanel);
             this.favoritesPanel.add(almPanel);
-            almPanel.setVisible(true);            
+            almPanel.setVisible(true);
         }
-        
+
         this.favoritesPanel.repaint();
     }
 }
