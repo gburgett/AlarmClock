@@ -55,23 +55,34 @@ public class AlarmPanel extends javax.swing.JPanel {
      */
     @SuppressWarnings("unchecked")
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
-    private void initComponents() {
+    private void initComponents()
+    {
 
         setTime = new javax.swing.JLabel();
-        exePath = new javax.swing.JLabel();
         cancelButton = new javax.swing.JButton();
+        exePath = new javax.swing.JTextField();
 
         setTime.setText("12:00 AM");
 
-        exePath.setText("www.pandora.com");
-
         cancelButton.setText("cancel");
         cancelButton.setPreferredSize(new java.awt.Dimension(63, 20));
-        cancelButton.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
+        cancelButton.addActionListener(new java.awt.event.ActionListener()
+        {
+            public void actionPerformed(java.awt.event.ActionEvent evt)
+            {
                 cancelButtonActionPerformed(evt);
             }
         });
+
+        exePath.setEditable(false);
+        exePath.setText("www.pandora.com");
+        exePath.setAlignmentX(0.0F);
+        exePath.setAutoscrolls(false);
+        exePath.setBorder(null);
+        exePath.setCaretPosition(0);
+        exePath.setMaximumSize(new java.awt.Dimension(91, 14));
+        exePath.setMinimumSize(new java.awt.Dimension(91, 14));
+        exePath.setOpaque(false);
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(this);
         this.setLayout(layout);
@@ -80,19 +91,21 @@ public class AlarmPanel extends javax.swing.JPanel {
             .addGroup(layout.createSequentialGroup()
                 .addComponent(cancelButton, javax.swing.GroupLayout.PREFERRED_SIZE, 82, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(exePath, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                     .addComponent(setTime, javax.swing.GroupLayout.PREFERRED_SIZE, 213, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addContainerGap(29, Short.MAX_VALUE))
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
                 .addComponent(setTime)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(exePath))
+                .addComponent(exePath, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
             .addComponent(cancelButton, javax.swing.GroupLayout.PREFERRED_SIZE, 40, javax.swing.GroupLayout.PREFERRED_SIZE)
         );
+
+        exePath.getAccessibleContext().setAccessibleName("www.pandora.com");
     }// </editor-fold>//GEN-END:initComponents
 
 private void cancelButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_cancelButtonActionPerformed
@@ -102,7 +115,7 @@ private void cancelButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton cancelButton;
-    private javax.swing.JLabel exePath;
+    private javax.swing.JTextField exePath;
     private javax.swing.JLabel setTime;
     // End of variables declaration//GEN-END:variables
 
@@ -112,7 +125,7 @@ private void cancelButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-
      */
     private static DateTimeFormatter formatter = DateTimeFormat.forPattern("h:mm a d MMM, yyyy");
     public void Update(){
-        this.exePath.setText(alarm.getPath());
+		this.exePath.setText(alarm.getPath());
         this.setTime.setText(alarm.getTime().toString(formatter));
     }
     

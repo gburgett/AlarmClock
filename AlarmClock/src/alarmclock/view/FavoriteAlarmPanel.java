@@ -42,32 +42,44 @@ public class FavoriteAlarmPanel extends javax.swing.JPanel {
      */
     @SuppressWarnings("unchecked")
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
-    private void initComponents() {
+    private void initComponents()
+    {
 
-        exePath = new javax.swing.JLabel();
         setTime = new javax.swing.JLabel();
         startButton = new javax.swing.JButton();
         removeButton = new javax.swing.JButton();
         jSeparator1 = new javax.swing.JSeparator();
-
-        exePath.setText("www.pandora.com");
+        exePath = new javax.swing.JTextField();
 
         setTime.setText("12:00 AM");
 
         startButton.setText("Start");
         startButton.setPreferredSize(new java.awt.Dimension(63, 20));
-        startButton.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
+        startButton.addActionListener(new java.awt.event.ActionListener()
+        {
+            public void actionPerformed(java.awt.event.ActionEvent evt)
+            {
                 startButtonActionPerformed(evt);
             }
         });
 
         removeButton.setText("Remove");
-        removeButton.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
+        removeButton.addActionListener(new java.awt.event.ActionListener()
+        {
+            public void actionPerformed(java.awt.event.ActionEvent evt)
+            {
                 removeButtonActionPerformed(evt);
             }
         });
+
+        exePath.setEditable(false);
+        exePath.setText("www.pandora.com");
+        exePath.setAlignmentX(0.0F);
+        exePath.setAutoscrolls(false);
+        exePath.setBorder(null);
+        exePath.setMaximumSize(new java.awt.Dimension(91, 14));
+        exePath.setMinimumSize(new java.awt.Dimension(91, 14));
+        exePath.setOpaque(false);
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(this);
         this.setLayout(layout);
@@ -80,7 +92,8 @@ public class FavoriteAlarmPanel extends javax.swing.JPanel {
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(setTime, javax.swing.GroupLayout.PREFERRED_SIZE, 213, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(exePath, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
+                    .addComponent(exePath, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
             .addComponent(jSeparator1, javax.swing.GroupLayout.Alignment.TRAILING)
         );
         layout.setVerticalGroup(
@@ -92,12 +105,15 @@ public class FavoriteAlarmPanel extends javax.swing.JPanel {
                         .addComponent(setTime)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                            .addComponent(exePath)
-                            .addComponent(removeButton, javax.swing.GroupLayout.PREFERRED_SIZE, 18, javax.swing.GroupLayout.PREFERRED_SIZE))))
+                            .addComponent(removeButton, javax.swing.GroupLayout.PREFERRED_SIZE, 18, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addComponent(exePath, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(jSeparator1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addContainerGap())
         );
+
+        exePath.getAccessibleContext().setAccessibleName("www.pandora.com");
+        exePath.getAccessibleContext().setAccessibleParent(this);
     }// </editor-fold>//GEN-END:initComponents
 
 private void startButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_startButtonActionPerformed
@@ -109,7 +125,7 @@ private void startButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-F
     }//GEN-LAST:event_removeButtonActionPerformed
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
-    private javax.swing.JLabel exePath;
+    private javax.swing.JTextField exePath;
     private javax.swing.JSeparator jSeparator1;
     private javax.swing.JButton removeButton;
     private javax.swing.JLabel setTime;
